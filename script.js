@@ -78,6 +78,7 @@ if (yearEl) yearEl.textContent = String(new Date().getFullYear());
 
 // Reviews logic (localStorage)
 const reviewsKey = 'oss_profile_reviews_v1';
+const reviewsRemoteUrl = 'assets/reviews.json';
 const reviewForm = document.getElementById('reviewForm');
 const starInput = document.getElementById('starInput');
 const ratingHidden = document.getElementById('rating');
@@ -167,6 +168,29 @@ if (reviewForm && ratingHidden && reviewStatus) {
 
 // Initial render
 renderReviews();
+
+// Remote reviews fallback (for devices where localStorage cleared or first-time)
+async function hydrateFromRemote() {
+	try {
+		const res = await fetch(reviewsRemoteUrl, { cache: 'no-cache' });
+		if (!res.ok) return;
+		const remote = await res.json();
+		if (Array.isArray(remote) && remote.length) {
+			const local = loadReviews();
+			// merge without duplicates (by ts+comment hash)
+			const key = (r) => `${r.ts || 0}-${(r.comment || '').slice(0,32)}`;
+			const map = new Map(local.map((r) => [key(r), r]));
+			for (const r of remote) {
+				if (!map.has(key(r))) map.set(key(r), r);
+			}
+			const merged = Array.from(map.values()).sort((a,b) => (b.ts||0)-(a.ts||0));
+			localStorage.setItem(reviewsKey, JSON.stringify(merged));
+			renderReviews();
+		}
+	} catch {}
+}
+
+hydrateFromRemote();
 
 // Reveal on scroll (IntersectionObserver)
 const revealEls = document.querySelectorAll('.reveal, .card');
