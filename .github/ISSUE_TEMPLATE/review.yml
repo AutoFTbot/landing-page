@@ -1,0 +1,31 @@
+name: Review
+description: Kirim review publik untuk ditampilkan di landing page
+title: "[Review] Ringkas: judul singkat"
+labels: [review]
+body:
+  - type: dropdown
+    id: rating
+    attributes:
+      label: Rating
+      options:
+        - 5
+        - 4
+        - 3
+        - 2
+        - 1
+    validations:
+      required: true
+  - type: input
+    id: name
+    attributes:
+      label: Nama (opsional)
+      placeholder: Anon
+  - type: textarea
+    id: comment
+    attributes:
+      label: Komentar
+      description: Ceritakan apakah proyek-proyek saya bermanfaat
+      placeholder: Tulis komentar Anda di sini
+    validations:
+      required: true
+

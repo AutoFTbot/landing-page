@@ -1,0 +1,54 @@
+name: Build public reviews JSON
+
+on:
+  schedule:
+    - cron: '0 */6 * * *'
+  workflow_dispatch:
+  issues:
+    types: [opened, edited]
+
+permissions:
+  contents: write
+  issues: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Fetch reviews from Issues
+        id: fetch
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issues = await github.paginate(github.rest.issues.listForRepo, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'review',
+              state: 'open',
+              per_page: 100
+            });
+            const reviews = [];
+            for (const it of issues) {
+              const body = it.body || '';
+              const ratingMatch = body.match(/Rating\s*[:|-]?\s*(\d+)/i) || it.title.match(/\[(?:Review)\][^\d]*(\d)/i);
+              const rating = ratingMatch ? Math.max(1, Math.min(5, parseInt(ratingMatch[1], 10))) : 5;
+              const nameMatch = body.match(/Nama\s*[:|-]?\s*(.*)/i);
+              const name = nameMatch ? nameMatch[1].trim().slice(0, 64) : 'Anon';
+              const comment = body.replace(/(^|\n)(Rating|Nama)\s*[:|-]?.*/gi, '').trim();
+              reviews.push({ rating, name, comment, ts: new Date(it.created_at).getTime(), issue: it.html_url });
+            }
+            core.setOutput('json', JSON.stringify(reviews, null, 2));
+
+      - name: Write file
+        run: |
+          echo "${{ steps.fetch.outputs.json }}" > assets/reviews.json
+
+      - name: Commit and push
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "chore: update assets/reviews.json from Issues"
+          file_pattern: assets/reviews.json
+
