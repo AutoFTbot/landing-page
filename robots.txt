@@ -1,5 +1,5 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://autoftbot.github.io/landing-page/sitemap.xml
+Sitemap: https://autoftbot.com/sitemap.xml
 

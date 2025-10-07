@@ -21,4 +21,5 @@ jobs:
           publish_dir: .
           publish_branch: gh-pages
           enable_jekyll: false
+          cname: autoftbot.com
 
